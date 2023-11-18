@@ -1,51 +1,33 @@
 <script setup>
 import { ref } from 'vue';
+import { useTodoList } from '/src/composables/useTodoList.js';
+
 const todoRef = ref('');
-const todoListRef = ref([]);
-const ls = localStorage.todoList;
-todoListRef.value = ls ? JSON.parse(ls) : [];
+const isEditRef = ref(false);
+const { todoListRef, add, show, edit, del, check } = useTodoList();
 
 const addTodo = () => {
-  //IDはミリ秒
-  const id = new Date().getTime();
-  //配列に入力TODOを格納
-  todoListRef.value.push({ id: id, task: todoRef.value });
-  //ローカルストレージに登録
-  localStorage.todoList = JSON.stringify(todoListRef.value);
-  //登録後は入力欄を空にする
+  add(todoRef.value);
   todoRef.value = '';
 };
 
-const isEditRef = ref(false);
-let editId = -1;
-
 const showTodo = (id) => {
-  const todo = todoListRef.value.find((todo) => todo.id === id);
-  todoRef.value = todo.task;
+  todoRef.value = show(id);
   isEditRef.value = true;
-  editId = id;
 };
 
 const editTodo = () => {
-  const todo = todoListRef.value.find((todo) => todo.id === editId);
-  const idx = todoListRef.value.findIndex((todo) => todo.id === editId);
-  todo.task = todoRef.value;
-  todoListRef.value.splice(idx, 1, todo);
-  localStorage.todoList = JSON.stringify(todoListRef.value);
+  edit(todoRef.value);
   isEditRef.value = false;
-  editIndex = -1;
   todoRef.value = '';
 };
 
 const deleteTodo = (id) => {
-  const todo = todoListRef.value.find((todo) => todo.id === id);
-  const idx = todoListRef.value.findIndex((todo) => todo.id === id);
-  const delMsg = '「' + todo.task + '」を削除しますか？';
-  if (!confirm(delMsg)) {
-    return;
-  }
-  todoListRef.value.splice(idx, 1);
-  localStorage.todoList = JSON.stringify(todoListRef.value);
+  del(id);
+};
+
+const changeCheck = (id) => {
+  check(id);
 };
 </script>
 
@@ -63,8 +45,13 @@ const deleteTodo = (id) => {
   </div>
   <div class="box_list">
     <div class="todo_list" v-for="todo in todoListRef" :key="todo.id">
-      <div class="todo">
-        <input type="checkbox" class="check" />
+      <div class="todo" :class="{ fin: todo.checked }">
+        <input
+          type="checkbox"
+          class="check"
+          @change="changeCheck(todo.id)"
+          :checked="todo.checked"
+        />
         <label>{{ todo.task }}</label>
       </div>
       <div class="btns">
@@ -135,5 +122,11 @@ const deleteTodo = (id) => {
 
 .pink {
   background-color: #ff4081;
+}
+
+.fin {
+  text-decoration: line-through;
+  background-color: #ddd;
+  color: #777;
 }
 </style>
